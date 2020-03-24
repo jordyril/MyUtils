@@ -101,6 +101,12 @@ class DataProcessor(object):
             data = pickle.load(handle)
         return data
 
+    def to_excel(self, df, filename, *args, **kwargs):
+        df.to_excel(f'{self.folder_path}{filename}.xlsx', *args, **kwargs)
+
+    def to_csv(self, df, filename, *args, **kwargs):
+        df.to_csv(f'{self.folder_path}{filename}.csv', *args, **kwargs)
+
 
 class DataReader(DataProcessor):
     def __init__(self, subfolder="Data"):
