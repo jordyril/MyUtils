@@ -3,6 +3,7 @@
 # =============================================================================
 import logging
 import matplotlib.pyplot as plt
+import pandas as pd
 # =============================================================================
 # support functions
 # =============================================================================
@@ -184,7 +185,7 @@ def remove_duplicates_in_list(l):
     return list(dict.fromkeys(l))
 
 
-def get_duplicate_columns(df):
+def get_duplicate_columnnames(df):
     old_list = df.columns.to_list()
     new_list = remove_duplicates_in_list(old_list)
     if len(old_list) == len(new_list):
@@ -196,6 +197,52 @@ def get_duplicate_columns(df):
             if occurrence != 1:
                 doubles.append(i)
     return doubles
+
+
+def get_duplicate_columns(df):
+    duplicates = get_duplicate_columnnames(df)  # identify duplicates
+
+    problem = []  # list for duplicate columnnames, but not values
+
+    # Check if values are also the same
+    for col in duplicates:
+        subdf = df[col]
+        n = subdf.shape[1]
+        temp_df = pd.DataFrame(
+            index=subdf.index,
+            columns=[f'{i}' for i in range(n)]
+        )
+        for i in range(n):
+            temp_df[i] = subdf.iloc[:, i]
+
+        temp_list = [(temp_df[0].fillna(0.) == temp_df[i].fillna(0.)).all()
+                     for i in range(1, n)]
+        if False in temp_list:
+            problem.append(col)
+
+    return duplicates, problem
+
+
+def drop_duplicate_columns(df):
+    duplicates, problems = get_duplicate_columns(df)
+    if len(problems):
+        raise ValueError(
+            f'Some columns have the same name, but different values'
+        )
+        return problems
+
+    # split main and duplicates
+    duplicates_df = df[duplicates]
+    # drop duplicate column (based on names, but checked above that values are equal too)
+    duplicates_df = duplicates_df.loc[:, ~duplicates_df.columns.duplicated()]
+
+    # Drop ALL duplicates form main
+    final = df.loc[:, ~df.columns.isin(duplicates)]
+
+    # Add the single columns again (were before duplicated)
+    final = pd.concat([final, duplicates_df], axis=1)
+
+    return final
 
 
 def plot_rolling_regression_results(betas, stdv, dates, multiplier=2):
