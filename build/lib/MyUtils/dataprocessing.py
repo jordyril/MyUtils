@@ -108,5 +108,5 @@ class DataReader(DataProcessor):
 
 
 class DataOutputting(DataProcessor):
-    def __init__(self, subfolder="Output"):
+    def __init__(self, subfolder=".Output"):
         super().__init__(subfolder)
