@@ -130,6 +130,23 @@ class DataReader(DataProcessor):
         super().__init__(subfolder)
 
 
+class DataInputting(DataProcessor):
+    def __init__(self, subfolder="Input"):
+        super().__init__(subfolder)
+
+
 class DataOutputting(DataProcessor):
     def __init__(self, subfolder=".Output"):
         super().__init__(subfolder)
+
+# =============================================================================
+# FUNCTIONS
+# =============================================================================
+
+
+def input_inter_output():
+    return DataInputting(), DataProcessor('Intermediate'), DataOutputting()
+
+
+def input_output():
+    return DataInputting(), DataOutputting()
