@@ -9,6 +9,7 @@ Created on Tue Jul 31 14:27:25 2018
 # =============================================================================
 import pickle
 import os
+import pandas as pd
 
 # =============================================================================
 # PICKLE
@@ -104,8 +105,24 @@ class DataProcessor(object):
     def to_excel(self, df, filename, *args, **kwargs):
         df.to_excel(f'{self.folder_path}{filename}.xlsx', *args, **kwargs)
 
+    def read_excel(self, filename, *args, **kwargs):
+        df = pd.read_excel(
+            f'{self.folder_path}{filename}.xlsx',
+            *args,
+            **kwargs
+        )
+        return df
+
     def to_csv(self, df, filename, *args, **kwargs):
         df.to_csv(f'{self.folder_path}{filename}.csv', *args, **kwargs)
+
+    def read_csv(self, filename, *args, **kwargs):
+        df = pd.read_csv(
+            f'{self.folder_path}{filename}.csv',
+            *args,
+            **kwargs
+        )
+        return df
 
 
 class DataReader(DataProcessor):
