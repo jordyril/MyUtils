@@ -189,7 +189,7 @@ def get_duplicate_columnnames(df):
     old_list = df.columns.to_list()
     new_list = remove_duplicates_in_list(old_list)
     if len(old_list) == len(new_list):
-        return None
+        return []
     else:
         doubles = []
         for i in new_list:
@@ -223,13 +223,20 @@ def get_duplicate_columns(df):
     return duplicates, problem
 
 
-def drop_duplicate_columns(df):
+def drop_duplicate_columns(df, ignore_error=False):
     duplicates, problems = get_duplicate_columns(df)
-    if len(problems):
-        raise ValueError(
-            f'Some columns have the same name, but different values'
-        )
-        return problems
+
+    if len(problems) > 0:
+        if not ignore_error:
+            raise ValueError(
+                f'Some columns have the same name, but different values'
+            )
+        else:
+            print(f'Some columns have the same name, but different values')
+            return df.loc[:, ~df.columns.duplicated()]
+
+    if len(duplicates) == 0:
+        return df
 
     # split main and duplicates
     duplicates_df = df[duplicates]
