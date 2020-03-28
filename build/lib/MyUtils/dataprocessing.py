@@ -150,3 +150,7 @@ def input_inter_output():
 
 def input_output():
     return DataInputting(), DataOutputting()
+
+
+def inter_output():
+    return DataProcessor('Intermediate'), DataOutputting()
