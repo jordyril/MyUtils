@@ -1,6 +1,7 @@
 README.md
 setup.py
 MyUtils/__init__.py
+MyUtils/_utils.py
 MyUtils/dataprocessing.py
 MyUtils/general.py
 MyUtils/latex.py

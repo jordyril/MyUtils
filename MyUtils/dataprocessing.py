@@ -11,6 +11,8 @@ import pickle
 import os
 import pandas as pd
 
+from MyUtils._utils import extensions_dic
+
 # =============================================================================
 # PICKLE
 # =============================================================================
@@ -76,14 +78,47 @@ class DataProcessor(object):
             if not os.path.exists(subfolder):
                 os.makedirs(subfolder)
 
+        self._to = ''
+        self._read = ''
+        self._ext = ''
+
+    def _file_path(self, filename, extension, destination=False):
+        if not destination:
+            return f"{self.folder_path}{filename}.{extension}"
+        else:
+            return f"{destination}{filename}.{extension}"
+
+    def _extension(self, ext):
+        return extensions_dic[ext][0]
+
+    def __getattr__(self, attr: str):
+        if len(attr) > 3 and attr.startswith("to_"):
+            self._to = attr
+            self._ext = extensions_dic[attr[3:]][0]
+            return self.to
+
+        elif len(attr) > 3 and attr.startswith("read_"):
+            self._read = attr
+            self._ext = extensions_dic[attr[5:]][0]
+            return self.read
+
+        raise AttributeError(
+            f"'{self.__class__}' object has no attribute '{attr}'")
+
+    def to(self, df, filename, *args, **kwargs):
+        attr = self._to
+        getattr(df, attr)(self._file_path(
+            filename, self._ext), *args, **kwargs)
+
+    def read(self, filename, *args, **kwargs):
+        attr = self._read
+        return getattr(pd, attr)(self._file_path(filename, self._ext), *args, **kwargs)
+
     def save_to_pickle(self, filename, dic, destination=False):
         """
         Saving an object to a pickle file
         """
-        if not destination:
-            file = f"{self.folder_path}{filename}.pickle"
-        else:
-            file = f"{destination}/{filename}.pickle"
+        file = self._file_path(filename, 'pickle', destination)
 
         with open(file, "wb") as handle:
             pickle.dump(dic, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -94,35 +129,10 @@ class DataProcessor(object):
         """
         Opening pickle file
         """
-        if not destination:
-            file = f"{self.folder_path}{filename}.pickle"
-        else:
-            file = f"{destination}/{filename}.pickle"
+        file = self._file_path(filename, 'pickle', destination)
         with open(file, "rb") as handle:
             data = pickle.load(handle)
         return data
-
-    def to_excel(self, df, filename, *args, **kwargs):
-        df.to_excel(f'{self.folder_path}{filename}.xlsx', *args, **kwargs)
-
-    def read_excel(self, filename, *args, **kwargs):
-        df = pd.read_excel(
-            f'{self.folder_path}{filename}.xlsx',
-            *args,
-            **kwargs
-        )
-        return df
-
-    def to_csv(self, df, filename, *args, **kwargs):
-        df.to_csv(f'{self.folder_path}{filename}.csv', *args, **kwargs)
-
-    def read_csv(self, filename, *args, **kwargs):
-        df = pd.read_csv(
-            f'{self.folder_path}{filename}.csv',
-            *args,
-            **kwargs
-        )
-        return df
 
 
 class DataReader(DataProcessor):
