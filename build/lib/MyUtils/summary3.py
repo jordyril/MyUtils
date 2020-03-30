@@ -1,5 +1,3 @@
-"""
-"""
 # COPY TO: C:\Users\jrilla\AppData\Local\Continuum\anaconda3\Lib\site-packages\statsmodels\iolib
 # or C:\Users\jordy\Anaconda3\Lib\site-packages\statsmodels\iolib
 
@@ -657,12 +655,10 @@ def _col_params(result, float_format="%.4f", stars=True, show="t"):
     except (AttributeError, TypeError):
         res.columns = result.model.dependent.vars
 
-    # I added the index name transfromation function
-    # to deal with MultiIndex and single level index.
     def _Intercept_2const(df):
         from pandas.core.indexes.multi import MultiIndex
 
-        if df.index.contains("Intercept"):
+        if 'Intercept' in df.index:
             if isinstance(df.index, MultiIndex):
                 new_index = []
                 for i in df.index.values:
@@ -799,19 +795,6 @@ def _make_unique_latex(list_of_names):
             for x, j in enumerate(list_of_names)
         ]
 
-    # The following function is the most critical to work.
-    # In this function  I added the parameters 'show' and 'title',
-    # and changed the default value of 'stars' into 'True',
-    # Then  I changed the dict parameter 'info_dict' as a list one named 'more_info'.
-    # Finally I put 'const'  at the first location by default in regressor_order.
-
-    # Bug: np.unique() will disrupt the original order of list,
-    # this can result in index confusion.
-
-
-# def summary_col(results, float_format='%.4f', model_names=[], stars=False,
-#                 info_dict=None, regressor_order=[]):
-
 
 def summary_col(
     results,
@@ -823,9 +806,6 @@ def summary_col(
     show="t",
     title=None,
 ):
-    # I added the parameter 'show' and changed the default of 'stars' into 'True',
-    # then renamed the dict parameter 'info_dict' as a list one 'more_info'
-    # finally assigned the regressor_order a initial value ['const']
     """
     Summarize multiple results instances side-by-side (coefs and SEs)
 
