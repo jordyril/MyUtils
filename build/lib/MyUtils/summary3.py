@@ -11,6 +11,7 @@ import re
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
+from functools import reduce
 from statsmodels.compat.python import (
     iteritems,
     iterkeys,
