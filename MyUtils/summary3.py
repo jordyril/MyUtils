@@ -187,8 +187,6 @@ class Summary(object):
         pad_col, pad_index, widest = _measure_tables(tables, settings)
 
         rule_equal = widest * "="
-        # TODO: this isn't used anywhere?
-        # rule_dash = widest * '-'
 
         simple_tables = _simple_tables(tables, settings, pad_col, pad_index)
         tab = [x.as_text() for x in simple_tables]
@@ -220,8 +218,6 @@ class Summary(object):
 
         tables = self.tables
         settings = self.settings
-        # TODO: this isn't used anywhere
-        # title = self.title
 
         simple_tables = _simple_tables(tables, settings)
         tab = [x.as_html() for x in simple_tables]
@@ -274,11 +270,20 @@ class Summary(object):
         summ_df = pd.concat(tables, axis=0)
         return summ_df.to_csv(path)
 
-    def to_latex_string(self):
+    def to_latex_string(self, dcolumn=False, **kwargs):
         """
         Improved to latex function, returning a table string that can be
         directly copied into latex (or written to .tex file)
         """
+        nbr_cols = self.tables[1].shape[1]
+        # Unwrap potential kwargs
+        if 'column_format' in kwargs:
+            column_format = kwargs['column_format']
+        elif dcolumn:
+            column_format = f"@{{\extracolsep{{1.75mm}}}}l{nbr_cols * 'd{2.3}'}"
+        else:
+            column_format = f"l{nbr_cols * 'c'}"
+
         # change column names
         new_cols = _make_unique_latex(self.tables[1].columns.to_list())
         self.tables[1].columns = new_cols
@@ -287,21 +292,25 @@ class Summary(object):
         #  Param table
         param_latex = self.tables[1].to_latex(
             escape=False,
-            column_format=f"l{self.tables[1].shape[1] * 'c'}",
+            column_format=column_format,
             bold_rows=True,
         )
         # Spec table
         # First 'unbracket' 'effects
         spec_table = self.tables[2]
-        try:
+        if 'Effects' in spec_table.index:
             spec_table.loc['Effects'] = spec_table.loc['Effects'].apply(
                 _unbracket_text)
-        except KeyError:
-            pass
+
         # Second, change model names
         model_dic = {'PanelOLS': 'Panel', 'FirstDifferenceOLS': 'FD'}
-        spec_table.loc['Model'] = spec_table.loc['Model'].apply(
-            lambda x: model_dic[x] if x in model_dic else x)
+        if 'Model' in spec_table.index:
+            spec_table.loc['Model'] = spec_table.loc['Model'].apply(
+                lambda x: model_dic[x] if x in model_dic else x
+            )
+
+        if dcolumn:
+            spec_table = spec_table.applymap(lambda x: f"\mc{{{x}}}")
 
         specs_latex = spec_table.to_latex(escape=False, bold_rows=True)
 
@@ -521,15 +530,6 @@ def summary_params(
 
     if isinstance(results, tuple):
         results, params, std_err, tvalues, pvalues, conf_int = results
-    # else:
-    #     params = results.params
-    #     bse = results.bse
-    #     tvalues = results.tvalues
-    #     pvalues = results.pvalues
-    #     conf_int = results.conf_int(alpha)
-
-    # I added Panel results whose some attributes name are different.
-    # So I modified the code as follows.
 
     elif isinstance(results, res_tuple):
         bse = results.std_errors
@@ -575,41 +575,6 @@ def summary_params(
         data.index = xname
 
     return data
-
-
-# The following function just can stack standard errors,but  we
-#  usually use t statistics in reality. I modified the function to
-# support one of standard errors, t or pvalues by parameter 'show'.
-
-# Bug: There exists different names for intercept item in different models,
-# for example, an OLS model named it 'Intercept' while 'const' in logit models.
-# So I also added a function to uniform the name to facilitate the data merge.
-
-# Vertical summary instance for multiple models
-# def _col_params(result, float_format='%.4f', stars=True):
-#     '''Stack coefficients and standard errors in single column
-#     '''
-
-#     # Extract parameters
-#     res = summary_params(result)
-#     # Format float
-#     for col in res.columns[:2]:
-#         res[col] = res[col].apply(lambda x: float_format % x)
-#     # Std.Errors in parentheses
-#     res.ix[:, 1] = '(' + res.ix[:, 1] + ')'
-#     # Significance stars
-#     if stars:
-#         idx = res.ix[:, 3] < .1
-#         res.ix[idx, 0] = res.ix[idx, 0] + '*'
-#         idx = res.ix[:, 3] < .05
-#         res.ix[idx, 0] = res.ix[idx, 0] + '*'
-#         idx = res.ix[:, 3] < .01
-#         res.ix[idx, 0] = res.ix[idx, 0] + '*'
-#     # Stack Coefs and Std.Errors
-#     res = res.ix[:, :2]
-#     res = res.stack()
-#     res = pd.DataFrame(res)
-#     res.columns = [str(result.model.endog_names)]
 
 
 def _col_params(result, float_format="%.4f", stars=True, show="t"):
@@ -679,32 +644,6 @@ def _col_params(result, float_format="%.4f", stars=True, show="t"):
     return _Intercept_2const(res)
 
 
-# def _col_info(result, info_dict=None):
-#     '''Stack model info in a column
-#     '''
-#     if info_dict is None:
-#         info_dict = {}
-#     out = []
-#     index = []
-#     for i in info_dict:
-#         if isinstance(info_dict[i], dict):
-#             # this is a specific model info_dict, but not for this result...
-#             continue
-#         try:
-#             out.append(info_dict[i](result))
-#         except:
-#             out.append('')
-#         index.append(i)
-#     out = pd.DataFrame({str(result.model.endog_names): out}, index=index)
-#     return out
-
-# I modified the above function,main work is that
-# I rename the parameter 'info_dict' to 'more_info',which is a list not a dict.
-# Besides, I build a default dict to contain some model information
-# from summary_model(), that will be printed by default and
-# users can append other statistics by more_info parameter.
-
-
 def _col_info(result, more_info=None):
     """Stack model info in a column
     """
@@ -744,23 +683,6 @@ def _col_info(result, more_info=None):
     return out
 
 
-# def _make_unique(list_of_names):
-#     if len(set(list_of_names)) == len(list_of_names):
-#         return list_of_names
-#     # pandas does not like it if multiple columns have the same names
-#     from collections import defaultdict
-#     name_counter = defaultdict(str)
-#     header = []
-#     for _name in list_of_names:
-#         name_counter[_name] += "I"
-#         header.append(_name+" " + name_counter[_name])
-#     return header
-
-# Above function has a flaw that non-duplicated names will be add a suffix.
-# And the time when endog_names duplicate four or more times ,the y
-# names will be like 'y IIII' or 'y IIIIII...'.So I used the Arabic numerals.
-
-
 def _make_unique(list_of_names):
     if len(set(list_of_names)) == len(list_of_names):
         return list_of_names
@@ -786,15 +708,21 @@ def _make_unique_latex(list_of_names):
     # correct previous unique making efforts
     list_of_names = [x[:-2] if x[-2] == "_" else x for x in list_of_names]
 
-    if len(set(list_of_names)) == 1:
-        return [f"({roman.toRoman(x)})" for x in range(1, 1 + len(list_of_names))]
-    # elif len(set(list_of_names)) == len(list_of_names):
-    #     return list_of_names
-    else:
-        return [
-            f"\\thead{{ ({roman.toRoman(x + 1)}) \\\\ {j}}}"
-            for x, j in enumerate(list_of_names)
-        ]
+    # Commented block returns only roman numbers if all names are the same
+    # While single return always keeps names,even when they are equal
+    # if len(set(list_of_names)) == 1:
+    #     return [f"({roman.toRoman(x)})" for x in range(1, 1 + len(list_of_names))]
+    # # elif len(set(list_of_names)) == len(list_of_names):
+    # #     return list_of_names
+    # else:
+    #     return [
+    #         f"\\thead{{ ({roman.toRoman(x + 1)}) \\\\ {j}}}"
+    #         for x, j in enumerate(list_of_names)
+    #     ]
+    return [
+        f"\\thead{{ ({roman.toRoman(x + 1)}) \\\\ {j}}}"
+        for x, j in enumerate(list_of_names)
+    ]
 
 
 def summary_col(
@@ -806,6 +734,7 @@ def summary_col(
     regressor_order=[],
     show="t",
     title=None,
+    delta=False
 ):
     """
     Summarize multiple results instances side-by-side (coefs and SEs)
@@ -851,6 +780,7 @@ def summary_col(
         colnames = _make_unique(model_names)
     else:
         colnames = _make_unique([x.columns[0] for x in cols])
+
     for i in range(len(cols)):
         cols[i].columns = [colnames[i]]
 
@@ -877,6 +807,18 @@ def summary_col(
     summ.index = f(pd.Series(varnames).unique())
     summ = summ.reindex(f(order))
     summ.index = [x[:-4] for x in summ.index]
+
+    #  Manage  underscores
+    summ.index = [x.replace('_', '-') for x in summ.index]
+
+    # Manage interaction
+    summ.index = [x.replace(' x ', ' \times ') for x in summ.index]
+
+    # Add delta
+    if delta:
+        summ.index = [f'\(\Delta {x}\)' for x in summ.index]
+    else:
+        summ.index = [f'\({x}\)' for x in summ.index]
 
     idx = pd.Series(lrange(summ.shape[0])) % 2 == 1
     summ.index = np.where(idx, "", summ.index.get_level_values(0))
@@ -1033,3 +975,13 @@ def _simple_tables(tables, settings, pad_col=None, pad_index=None):
             )
         )
     return simple_tables
+
+
+def add_se_note(dfoutput, se_note):
+    se_note_df = pd.DataFrame(
+        dfoutput.tables[-1].shape[1] * [" "],
+        index=dfoutput.tables[-1].columns,
+        columns=[f"\t {se_note}"],
+    ).T
+    dfoutput.tables[-1] = dfoutput.tables[-1].append(se_note_df)
+    return None
