@@ -290,7 +290,14 @@ class Summary(object):
 
         # '.to-latex()' both param and specs tables
         #  Param table
-        param_latex = self.tables[1].to_latex(
+        param_table = self.tables[1]
+        if dcolumn:
+            exp = re.compile(r"(\*{1,3})")
+            param_table = param_table.applymap(
+                lambda x: x.replace(exp.search(x).groups()[
+                    0], f'^{{{exp.search(x).groups()[0]}}}') if exp.search(x) else x
+            )
+        param_latex = param_table.to_latex(
             escape=False,
             column_format=column_format,
             bold_rows=True,
