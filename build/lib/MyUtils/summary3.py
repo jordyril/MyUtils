@@ -270,19 +270,45 @@ class Summary(object):
         summ_df = pd.concat(tables, axis=0)
         return summ_df.to_csv(path)
 
-    def to_latex_string(self, dcolumn=False, **kwargs):
+    def to_latex_string(
+        self,
+        note=True,
+        dcolumn=False,
+        dcolumns_kwargs=None,
+        spec_kwargs={},
+        param_kwargs={},
+        tabular_env='tabular',
+        tabular_env_kwargs={}
+    ):
         """
         Improved to latex function, returning a table string that can be
         directly copied into latex (or written to .tex file)
         """
+        # start by defining default values for all kwargs (Those different from regular default)
+        # kwargs for the specs table
+        if 'escape' not in spec_kwargs:
+            spec_kwargs['escape'] = False
+
         nbr_cols = self.tables[1].shape[1]
-        # Unwrap potential kwargs
-        if 'column_format' in kwargs:
-            column_format = kwargs['column_format']
-        elif dcolumn:
-            column_format = f"@{{\extracolsep{{1.75mm}}}}l{nbr_cols * 'd{2.3}'}"
-        else:
-            column_format = f"l{nbr_cols * 'c'}"
+
+        # Kwargs for the parameter table
+        if 'escape' not in param_kwargs:
+            param_kwargs['escape'] = False
+        if 'bold_rows' not in param_kwargs:
+            param_kwargs['bold_rows'] = True
+
+        # column_format
+        if 'column_format' not in param_kwargs:
+            sep = param_kwargs.pop('sep', '')
+            column_format = f"@{{{sep}}}"
+            if dcolumn:
+                if not dcolumns_kwargs:
+                    column_format = column_format + f"l{nbr_cols * 'd{2.3}'}"
+                else:  # TODO
+                    pass
+            else:
+                column_format = column_format + f"l{nbr_cols * 'c'}"
+            param_kwargs['column_format'] = column_format
 
         # change column names
         new_cols = _make_unique_latex(self.tables[1].columns.to_list())
@@ -297,11 +323,7 @@ class Summary(object):
                 lambda x: x.replace(exp.search(x).groups()[
                     0], f'^{{{exp.search(x).groups()[0]}}}') if exp.search(x) else x
             )
-        param_latex = param_table.to_latex(
-            escape=False,
-            column_format=column_format,
-            bold_rows=True,
-        )
+        param_latex = param_table.to_latex(**param_kwargs)
         # Spec table
         # First 'unbracket' 'effects
         spec_table = self.tables[2]
@@ -319,7 +341,8 @@ class Summary(object):
         if dcolumn:
             spec_table = spec_table.applymap(lambda x: f"\mc{{{x}}}")
 
-        specs_latex = spec_table.to_latex(escape=False, bold_rows=True)
+        # specs_latex = spec_table.to_latex(escape=False, bold_rows=True)
+        specs_latex = spec_table.to_latex(**spec_kwargs)
 
         # both are within tabular environment, split up so the can be joined to one
         param_latex = param_latex.split("\\bottomrule\n")[0]
@@ -328,36 +351,53 @@ class Summary(object):
         # add midrule between params and specs
         to_latex = "\midrule\n".join([param_latex, specs_latex])
 
-        if self.tables[3].shape[0] > 3:
-            # create notes
-            note1 = "".join(self.tables[3].index.to_list()[
-                            :-1]).replace("\t", "")
-            note1 = note1.replace("note", "Notes")
-            note1 = note1.replace("<", "$<$")
+        if note:
+            if self.tables[3].shape[0] > 3:
+                # create notes
+                note1 = "".join(self.tables[3].index.to_list()[
+                                :-1]).replace("\t", "")
+                note1 = note1.replace("note", "Notes")
+                note1 = note1.replace("<", "$<$")
 
-            note2 = self.tables[3].index.to_list()[-1]
+                note2 = self.tables[3].index.to_list()[-1]
 
-            # add notes
-            to_latex = to_latex.replace(
-                "\\\\\n\\bottomrule",
-                (
-                    f"\\\\\n\\bottomrule \\\\\n\\multicolumn{{{self.tables[1].shape[1] + 1}}}{{l}}{{{note1}}}"
-                    f"\\\\\n\\multicolumn{{{self.tables[1].shape[1] + 1}}}{{l}}{{{note2}}}"
-                ),
-            )
+                # add notes
+                to_latex = to_latex.replace(
+                    "\\\\\n\\bottomrule",
+                    (
+                        f"\\\\\n\\bottomrule \\\\\n\\multicolumn{{{self.tables[1].shape[1] + 1}}}{{l}}{{{note1}}}"
+                        f"\\\\\n\\multicolumn{{{self.tables[1].shape[1] + 1}}}{{l}}{{{note2}}}"
+                    ),
+                )
 
+            else:
+                # create note
+                notes = "".join(
+                    self.tables[3].index.to_list()).replace("\t", "")
+                notes = notes.replace("note", "Note")
+                notes = notes.replace("<", "$<$")
+
+                # add notes
+                to_latex = to_latex.replace(
+                    "\\\\\n\\bottomrule",
+                    f"\\\\\n\\bottomrule \\\\\n\\multicolumn{{{self.tables[1].shape[1] + 1}}}{{l}}{{{notes}}}",
+                )
+
+        # different tabular environment
+        if tabular_env == 'tabular':
+            pass
+        elif tabular_env == 'tabulary':
+            tabular_width = tabular_env_kwargs.pop('width', "0.9\\textwidth")
+
+            to_latex = to_latex.replace("\\begin{tabular}",
+                                        f"\\begin{{tabulary}}{{{tabular_width}}}")
+            to_latex = to_latex.replace('{tabular}', f'{{tabulary}}')
         else:
-            # create note
-            notes = "".join(self.tables[3].index.to_list()).replace("\t", "")
-            notes = notes.replace("note", "Note")
-            notes = notes.replace("<", "$<$")
+            raise ValueError(
+                'Given tabular environment is not yet implemented')
 
-            # add notes
-            to_latex = to_latex.replace(
-                "\\\\\n\\bottomrule",
-                f"\\\\\n\\bottomrule \\\\\n\\multicolumn{{{self.tables[1].shape[1] + 1}}}{{l}}{{{notes}}}",
-            )
-
+        if tabular_env != 'tabular':
+            to_latex.replace('{tabular}', f'{{{tabular_env}}}')
         # to_latex = to_latex.replace(":", "")
         return to_latex
 
@@ -651,18 +691,18 @@ def _col_params(result, float_format="%.4f", stars=True, show="t"):
     return _Intercept_2const(res)
 
 
-def _col_info(result, more_info=None):
+def _col_info(result, more_info=None):  # WARNING - restore defaultinfo
     """Stack model info in a column
     """
     model_info = summary_model(result)
     default_info_ = OrderedDict()
-    default_info_["Model"] = lambda x: x.get("Model:")
+    # default_info_["Model"] = lambda x: x.get("Model:")
     default_info_["No. Observations"] = lambda x: x.get("No. Observations:")
     default_info_["R-squared"] = lambda x: x.get("R-squared:")
     default_info_["Adj. R-squared"] = lambda x: x.get("Adj. R-squared:")
     default_info_["Pseudo R-squared"] = lambda x: x.get("Pseudo R-squared:")
     # default_info_['F-statistic:'] = lambda x: x.get('F-statistic:')
-    default_info_["Covariance Type"] = lambda x: x.get("Covariance Type:")
+    # default_info_["Covariance Type"] = lambda x: x.get("Covariance Type:")
     default_info_["Effects"] = lambda x: x.get("Effects:")
 
     default_info = default_info_.copy()
