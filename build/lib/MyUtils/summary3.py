@@ -277,8 +277,8 @@ class Summary(object):
         dcolumns_kwargs=None,
         spec_kwargs={},
         param_kwargs={},
-        tabular_env='tabular',
-        tabular_env_kwargs={}
+        tabular_env="tabular",
+        tabular_env_kwargs={},
     ):
         """
         Improved to latex function, returning a table string that can be
@@ -286,20 +286,20 @@ class Summary(object):
         """
         # start by defining default values for all kwargs (Those different from regular default)
         # kwargs for the specs table
-        if 'escape' not in spec_kwargs:
-            spec_kwargs['escape'] = False
+        if "escape" not in spec_kwargs:
+            spec_kwargs["escape"] = False
 
         nbr_cols = self.tables[1].shape[1]
 
         # Kwargs for the parameter table
-        if 'escape' not in param_kwargs:
-            param_kwargs['escape'] = False
-        if 'bold_rows' not in param_kwargs:
-            param_kwargs['bold_rows'] = True
+        if "escape" not in param_kwargs:
+            param_kwargs["escape"] = False
+        if "bold_rows" not in param_kwargs:
+            param_kwargs["bold_rows"] = True
 
         # column_format
-        if 'column_format' not in param_kwargs:
-            sep = param_kwargs.pop('sep', '')
+        if "column_format" not in param_kwargs:
+            sep = param_kwargs.pop("sep", "")
             column_format = f"@{{{sep}}}"
             if dcolumn:
                 if not dcolumns_kwargs:
@@ -308,7 +308,7 @@ class Summary(object):
                     pass
             else:
                 column_format = column_format + f"l{nbr_cols * 'c'}"
-            param_kwargs['column_format'] = column_format
+            param_kwargs["column_format"] = column_format
 
         # change column names
         new_cols = _make_unique_latex(self.tables[1].columns.to_list())
@@ -320,21 +320,23 @@ class Summary(object):
         if dcolumn:
             exp = re.compile(r"(\*{1,3})")
             param_table = param_table.applymap(
-                lambda x: x.replace(exp.search(x).groups()[
-                    0], f'^{{{exp.search(x).groups()[0]}}}') if exp.search(x) else x
+                lambda x: x.replace(
+                    exp.search(x).groups()[0], f"^{{{exp.search(x).groups()[0]}}}"
+                )
+                if exp.search(x)
+                else x
             )
         param_latex = param_table.to_latex(**param_kwargs)
         # Spec table
         # First 'unbracket' 'effects
         spec_table = self.tables[2]
-        if 'Effects' in spec_table.index:
-            spec_table.loc['Effects'] = spec_table.loc['Effects'].apply(
-                _unbracket_text)
+        if "Effects" in spec_table.index:
+            spec_table.loc["Effects"] = spec_table.loc["Effects"].apply(_unbracket_text)
 
         # Second, change model names
-        model_dic = {'PanelOLS': 'Panel', 'FirstDifferenceOLS': 'FD'}
-        if 'Model' in spec_table.index:
-            spec_table.loc['Model'] = spec_table.loc['Model'].apply(
+        model_dic = {"PanelOLS": "Panel", "FirstDifferenceOLS": "FD"}
+        if "Model" in spec_table.index:
+            spec_table.loc["Model"] = spec_table.loc["Model"].apply(
                 lambda x: model_dic[x] if x in model_dic else x
             )
 
@@ -354,8 +356,7 @@ class Summary(object):
         if note:
             if self.tables[3].shape[0] > 3:
                 # create notes
-                note1 = "".join(self.tables[3].index.to_list()[
-                                :-1]).replace("\t", "")
+                note1 = "".join(self.tables[3].index.to_list()[:-1]).replace("\t", "")
                 note1 = note1.replace("note", "Notes")
                 note1 = note1.replace("<", "$<$")
 
@@ -372,8 +373,7 @@ class Summary(object):
 
             else:
                 # create note
-                notes = "".join(
-                    self.tables[3].index.to_list()).replace("\t", "")
+                notes = "".join(self.tables[3].index.to_list()).replace("\t", "")
                 notes = notes.replace("note", "Note")
                 notes = notes.replace("<", "$<$")
 
@@ -384,20 +384,20 @@ class Summary(object):
                 )
 
         # different tabular environment
-        if tabular_env == 'tabular':
+        if tabular_env == "tabular":
             pass
-        elif tabular_env == 'tabulary':
-            tabular_width = tabular_env_kwargs.pop('width', "0.9\\textwidth")
+        elif tabular_env == "tabulary":
+            tabular_width = tabular_env_kwargs.pop("width", "0.9\\textwidth")
 
-            to_latex = to_latex.replace("\\begin{tabular}",
-                                        f"\\begin{{tabulary}}{{{tabular_width}}}")
-            to_latex = to_latex.replace('{tabular}', f'{{tabulary}}')
+            to_latex = to_latex.replace(
+                "\\begin{tabular}", f"\\begin{{tabulary}}{{{tabular_width}}}"
+            )
+            to_latex = to_latex.replace("{tabular}", f"{{tabulary}}")
         else:
-            raise ValueError(
-                'Given tabular environment is not yet implemented')
+            raise ValueError("Given tabular environment is not yet implemented")
 
-        if tabular_env != 'tabular':
-            to_latex.replace('{tabular}', f'{{{tabular_env}}}')
+        if tabular_env != "tabular":
+            to_latex.replace("{tabular}", f"{{{tabular_env}}}")
         # to_latex = to_latex.replace(":", "")
         return to_latex
 
@@ -407,7 +407,7 @@ def _unbracket_text(text):
     Help function to extract any text within brackets
     """
     try:
-        return re.search(r'\((.*?)\)', text).group(1)
+        return re.search(r"\((.*?)\)", text).group(1)
     except AttributeError:
         return text
 
@@ -521,8 +521,7 @@ def summary_model(results):
 
     info["Scale:"] = lambda x: "%#8.5g" % x.scale
     # 6
-    info["Effects:"] = lambda x: ",".join(
-        ["%#8s" % i for i in x.included_effects])
+    info["Effects:"] = lambda x: ",".join(["%#8s" % i for i in x.included_effects])
 
     out = OrderedDict()
     for key, func in iteritems(info):
@@ -572,16 +571,23 @@ def summary_params(
     from linearmodels.panel.results import PanelEffectsResults
     from linearmodels.panel.results import RandomEffectsResults
     from linearmodels.panel.results import PanelResults
+    from arch.univariate.base import ARCHModelResult
 
-    res_tuple = (PanelEffectsResults, PanelResults, RandomEffectsResults)
+    linearmodels_res_tuple = (PanelEffectsResults, PanelResults, RandomEffectsResults)
+    arch_res_tuple = (ARCHModelResult,)
 
     if isinstance(results, tuple):
         results, params, std_err, tvalues, pvalues, conf_int = results
 
-    elif isinstance(results, res_tuple):
+    elif isinstance(results, linearmodels_res_tuple):
         bse = results.std_errors
         tvalues = results.tstats
         conf_int = results.conf_int(1 - alpha)
+
+    elif isinstance(results, arch_res_tuple):
+        bse = results.std_err
+        tvalues = results.tvalues
+        conf_int = results.conf_int(alpha)
     else:
         bse = results.bse
         tvalues = results.tvalues
@@ -613,11 +619,16 @@ def summary_params(
         ]
 
     if not xname:
-        # data.index = results.model.exog_names
-        try:
-            data.index = results.model.exog_names
-        except (AttributeError, TypeError):
-            data.index = results.model.exog.vars
+        if isinstance(results, arch_res_tuple):
+            data_index = (
+                results.model.parameter_names()
+                + results.model.volatility.parameter_names()
+            )
+        else:
+            try:
+                data.index = results.model.exog_names
+            except (AttributeError, TypeError):
+                data.index = results.model.exog.vars
     else:
         data.index = xname
 
@@ -648,8 +659,7 @@ def _col_params(result, float_format="%.4f", stars=True, show="t"):
         idx = res.iloc[:, 3] < 0.01
         res.loc[res.index[idx], res.columns[0]] += "*"
     # Std.Errors or tvalues or  pvalues in parentheses
-    res.iloc[:, 3] = res.iloc[:, 3].apply(
-        lambda x: float_format % x)  # pvalues to str
+    res.iloc[:, 3] = res.iloc[:, 3].apply(lambda x: float_format % x)  # pvalues to str
     res.iloc[:, 1] = "(" + res.iloc[:, 1] + ")"
     res.iloc[:, 2] = "(" + res.iloc[:, 2] + ")"
     res.iloc[:, 3] = "(" + res.iloc[:, 3] + ")"
@@ -671,7 +681,7 @@ def _col_params(result, float_format="%.4f", stars=True, show="t"):
     def _Intercept_2const(df):
         from pandas.core.indexes.multi import MultiIndex
 
-        if 'Intercept' in df.index:
+        if "Intercept" in df.index:
             if isinstance(df.index, MultiIndex):
                 new_index = []
                 for i in df.index.values:
@@ -781,7 +791,7 @@ def summary_col(
     regressor_order=[],
     show="t",
     title=None,
-    delta=False
+    delta=False,
 ):
     """
     Summarize multiple results instances side-by-side (coefs and SEs)
@@ -831,8 +841,9 @@ def summary_col(
     for i in range(len(cols)):
         cols[i].columns = [colnames[i]]
 
-    def merg(x, y): return x.merge(
-        y, how="outer", right_index=True, left_index=True)
+    def merg(x, y):
+        return x.merge(y, how="outer", right_index=True, left_index=True)
+
     summ = reduce(merg, cols)
 
     # if regressor_order:
@@ -849,23 +860,25 @@ def summary_col(
     # order = ordered + list(np.unique(unordered))
     order = ordered + list(pd.Series(unordered).unique())
 
-    def f(idx): return sum([[x + "coef", x + "stde"] for x in idx], [])
+    def f(idx):
+        return sum([[x + "coef", x + "stde"] for x in idx], [])
+
     # summ.index = f(np.unique(varnames))
     summ.index = f(pd.Series(varnames).unique())
     summ = summ.reindex(f(order))
     summ.index = [x[:-4] for x in summ.index]
 
     #  Manage  underscores
-    summ.index = [x.replace('_', '-') for x in summ.index]
+    summ.index = [x.replace("_", "-") for x in summ.index]
 
     # Manage interaction
-    summ.index = [x.replace(' x ', ' \times ') for x in summ.index]
+    summ.index = [x.replace(" x ", " \times ") for x in summ.index]
 
     # Add delta
     if delta:
-        summ.index = [f'\(\Delta {x}\)' for x in summ.index]
+        summ.index = [f"\(\Delta {x}\)" for x in summ.index]
     else:
-        summ.index = [f'\({x}\)' for x in summ.index]
+        summ.index = [f"\({x}\)" for x in summ.index]
 
     idx = pd.Series(lrange(summ.shape[0])) % 2 == 1
     summ.index = np.where(idx, "", summ.index.get_level_values(0))
@@ -885,8 +898,9 @@ def summary_col(
         df.columns = [name]
         index = df.index.to_list()
 
-    def merg(x, y): return x.merge(
-        y, how="outer", right_index=True, left_index=True)
+    def merg(x, y):
+        return x.merge(y, how="outer", right_index=True, left_index=True)
+
     info = reduce(merg, cols)
 
     # removes duplicates from index
@@ -922,8 +936,7 @@ def summary_col(
     # Here  I tried two ways to put extra text in index-location
     # or columns-location,finally found the former is better.
     #     note_df = pd.DataFrame(note,index=['note']+['']*(len(note)-1),columns=[summ.columns[0]])
-    note_df = pd.DataFrame([], index=["note:"] + note,
-                           columns=summ.columns).fillna("")
+    note_df = pd.DataFrame([], index=["note:"] + note, columns=summ.columns).fillna("")
     #     summ_all = pd.concat([summ,info,note_df],axis=0)
 
     # I construct a title DataFrame and adjust the location of title
