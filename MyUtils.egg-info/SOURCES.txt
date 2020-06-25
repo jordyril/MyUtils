@@ -11,6 +11,7 @@ MyUtils/vector.py
 MyUtils.egg-info/PKG-INFO
 MyUtils.egg-info/SOURCES.txt
 MyUtils.egg-info/dependency_links.txt
+MyUtils.egg-info/requires.txt
 MyUtils.egg-info/top_level.txt
 MyUtils/estimation/OLS.py
 MyUtils/estimation/__init__.py

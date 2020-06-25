@@ -86,8 +86,8 @@ setup(
     author_email=EMAIL,
     maintainer=AUTHOR,
     maintainer_email=EMAIL,
-    # , setup_requires=['numpy','scipy', 'matplotlib', 'pandas', 'statsmodels']
-    # , install_requires=['numpy','scipy', 'matplotlib', 'pandas', 'statsmodels']
+    setup_requires=['roman'],
+    install_requires=['roman'],
     long_description=LONG_DESCRIPTION,
     packages=[
         "MyUtils",
