@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import numpy as np
+
 # =============================================================================
 # support functions
 # =============================================================================
@@ -20,6 +21,7 @@ import numpy as np
 #     else:
 #         print(x + ':', globals()[x])
 #     return None
+
 
 def intersection(*d):
     sets = iter(map(set, d))
@@ -202,6 +204,7 @@ def get_duplicate_columnnames(df):
 
 
 def get_duplicate_columns(df):
+    df = df.sort_index(axis=1)
     duplicates = get_duplicate_columnnames(df)  # identify duplicates
 
     problem = []  # list for duplicate columnnames, but not values
@@ -210,32 +213,38 @@ def get_duplicate_columns(df):
     for col in duplicates:
         subdf = df[col]
         n = subdf.shape[1]
-        temp_df = pd.DataFrame(
-            index=subdf.index,
-            columns=[f'{i}' for i in range(n)]
-        )
-        for i in range(n):
-            temp_df[i] = subdf.iloc[:, i]
+        temp_df = subdf.copy()
+        temp_df.columns = [i for i in range(n)]
 
-        temp_list = [(temp_df[0].fillna(0.) == temp_df[i].fillna(0.)).all()
-                     for i in range(1, n)]
+        temp_list = [
+            np.allclose(temp_df[0], temp_df[i], equal_nan=True) for i in temp_df.columns
+        ]
         if False in temp_list:
             problem.append(col)
 
     return duplicates, problem
 
 
-def drop_duplicate_columns(df, ignore_error=False):
+def drop_duplicate_columns(df, ignore_error=False, **kwargs):
+    df = df.sort_index(axis=1)
     duplicates, problems = get_duplicate_columns(df)
 
     if len(problems) > 0:
         if not ignore_error:
-            raise ValueError(
-                f'Some columns have the same name, but different values'
-            )
+            raise ValueError(f"Some columns have the same name, but different values")
         else:
-            print(f'Some columns have the same name, but different values')
-            return df.loc[:, ~df.columns.duplicated()]
+            if not kwargs["keep"]:
+                raise ValueError(
+                    "If you ignore errors, you must explicitely stat the 'keep' keyword for the .duplicated() method"
+                )
+            keep = kwargs["keep"]
+            print("Some columns have the same name, but different values")
+            print(f"Simply retain '{keep}' here")
+            print("PROBLEMS:")
+            for i in problems:
+                print(i)
+            print()
+            return df.loc[:, ~df.columns.duplicated(keep=keep)]
 
     if len(duplicates) == 0:
         return df

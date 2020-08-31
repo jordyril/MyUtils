@@ -1,5 +1,1 @@
-extensions_dic = {
-    'pickle': ['pickle'],
-    'excel': ['xlsx'],
-    'csv': ['csv']
-}
+extensions_dic = {"pickle": ["pickle"], "excel": ["xlsx"], "csv": ["csv", "txt"]}

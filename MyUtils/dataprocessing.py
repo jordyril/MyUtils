@@ -78,9 +78,9 @@ class DataProcessor(object):
             if not os.path.exists(subfolder):
                 os.makedirs(subfolder)
 
-        self._to = ''
-        self._read = ''
-        self._ext = ''
+        self._to = ""
+        self._read = ""
+        self._ext = ""
 
     def _file_path(self, filename, extension, destination=False):
         if not destination:
@@ -94,21 +94,29 @@ class DataProcessor(object):
     def __getattr__(self, attr: str):
         if len(attr) > 3 and attr.startswith("to_"):
             self._to = attr
-            self._ext = extensions_dic[attr[3:]][0]
+            try:
+                self._ext = extensions_dic[attr[3:]][0]
+            except KeyError:
+                self._ext = attr[3:]
             return self.to
 
-        elif len(attr) > 3 and attr.startswith("read_"):
+        elif len(attr) > 5 and attr.startswith("read_"):
             self._read = attr
-            self._ext = extensions_dic[attr[5:]][0]
+            try:
+                self._ext = extensions_dic[attr[5:]][0]
+            except KeyError:
+                self._ext = attr[5:]
             return self.read
 
-        raise AttributeError(
-            f"'{self.__class__}' object has no attribute '{attr}'")
+        raise AttributeError(f"'{self.__class__}' object has no attribute '{attr}'")
 
-    def to(self, df, filename, *args, **kwargs):
+    def to(self, df, filename, extension=None, *args, **kwargs):
+        if extension:
+            ext = extension
+        else:
+            ext = self._ext
         attr = self._to
-        getattr(df, attr)(self._file_path(
-            filename, self._ext), *args, **kwargs)
+        getattr(df, attr)(self._file_path(filename, ext), *args, **kwargs)
 
     def read(self, filename, *args, **kwargs):
         attr = self._read
@@ -118,7 +126,7 @@ class DataProcessor(object):
         """
         Saving an object to a pickle file
         """
-        file = self._file_path(filename, 'pickle', destination)
+        file = self._file_path(filename, "pickle", destination)
 
         with open(file, "wb") as handle:
             pickle.dump(dic, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -129,7 +137,7 @@ class DataProcessor(object):
         """
         Opening pickle file
         """
-        file = self._file_path(filename, 'pickle', destination)
+        file = self._file_path(filename, "pickle", destination)
         with open(file, "rb") as handle:
             data = pickle.load(handle)
         return data
@@ -149,13 +157,14 @@ class DataOutputting(DataProcessor):
     def __init__(self, subfolder=".Output"):
         super().__init__(subfolder)
 
+
 # =============================================================================
 # FUNCTIONS
 # =============================================================================
 
 
 def input_inter_output():
-    return DataInputting(), DataProcessor('Intermediate'), DataOutputting()
+    return DataInputting(), DataProcessor("Intermediate"), DataOutputting()
 
 
 def input_output():
@@ -163,4 +172,4 @@ def input_output():
 
 
 def inter_output():
-    return DataProcessor('Intermediate'), DataOutputting()
+    return DataProcessor("Intermediate"), DataOutputting()
