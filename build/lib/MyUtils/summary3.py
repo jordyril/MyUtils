@@ -1,6 +1,3 @@
-# COPY TO: C:\Users\jrilla\AppData\Local\Continuum\anaconda3\Lib\site-packages\statsmodels\iolib
-# or C:\Users\jordy\Anaconda3\Lib\site-packages\statsmodels\iolib
-
 import datetime
 import textwrap
 
@@ -136,7 +133,7 @@ class Summary(object):
                 if model in _model_types:
                     model = _model_types[model]
                 self.title = "Results: " + model
-            except:
+            except [NameError, AttributeError]:
                 self.title = ""
 
     def add_base(
@@ -279,12 +276,14 @@ class Summary(object):
         param_kwargs={},
         tabular_env="tabular",
         tabular_env_kwargs={},
+        keep_names=True,
     ):
         """
         Improved to latex function, returning a table string that can be
         directly copied into latex (or written to .tex file)
         """
-        # start by defining default values for all kwargs (Those different from regular default)
+        # start by defining default values for all kwargs
+        # (Those different from regular default)
         # kwargs for the specs table
         if "escape" not in spec_kwargs:
             spec_kwargs["escape"] = False
@@ -311,7 +310,7 @@ class Summary(object):
             param_kwargs["column_format"] = column_format
 
         # change column names
-        new_cols = _make_unique_latex(self.tables[1].columns.to_list())
+        new_cols = _make_unique_latex(self.tables[1].columns.to_list(), keep=keep_names)
         self.tables[1].columns = new_cols
 
         # '.to-latex()' both param and specs tables
@@ -392,7 +391,7 @@ class Summary(object):
             to_latex = to_latex.replace(
                 "\\begin{tabular}", f"\\begin{{tabulary}}{{{tabular_width}}}"
             )
-            to_latex = to_latex.replace("{tabular}", f"{{tabulary}}")
+            to_latex = to_latex.replace("{tabular}", "{tabulary}")
         else:
             raise ValueError("Given tabular environment is not yet implemented")
 
@@ -571,9 +570,15 @@ def summary_params(
     from linearmodels.panel.results import PanelEffectsResults
     from linearmodels.panel.results import RandomEffectsResults
     from linearmodels.panel.results import PanelResults
+    from linearmodels.asset_pricing.results import LinearFactorModelResults
     from arch.univariate.base import ARCHModelResult
 
-    linearmodels_res_tuple = (PanelEffectsResults, PanelResults, RandomEffectsResults)
+    linearmodels_res_tuple = (
+        PanelEffectsResults,
+        PanelResults,
+        RandomEffectsResults,
+        # LinearFactorModelResults,
+    )
     arch_res_tuple = (ARCHModelResult,)
 
     if isinstance(results, tuple):
@@ -583,17 +588,36 @@ def summary_params(
         bse = results.std_errors
         tvalues = results.tstats
         conf_int = results.conf_int(1 - alpha)
+        pvalues = results.pvalues
 
     elif isinstance(results, arch_res_tuple):
         bse = results.std_err
         tvalues = results.tvalues
         conf_int = results.conf_int(alpha)
+        pvalues = results.pvalues
+
+    elif isinstance(results, LinearFactorModelResults):
+        bse = results.risk_premia_se
+        tvalues = results.risk_premia_tstats
+
+        from scipy import stats
+
+        conf_int = np.asarray(results.risk_premia)[:, None] + np.asarray(
+            results.risk_premia_se
+        )[:, None] * stats.norm.ppf([[alpha / 2, 1 - alpha / 2]])
+        conf_int = pd.DataFrame(conf_int, index=bse.index, columns=["lower", "upper"],)
+        pvalues = pd.Series(2 - 2 * stats.norm.cdf(np.abs(tvalues)), index=bse.index,)
+
     else:
         bse = results.bse
         tvalues = results.tvalues
         conf_int = results.conf_int(alpha)
+        pvalues = results.pvalues
+
     params = results.params
-    pvalues = results.pvalues
+
+    if isinstance(results, LinearFactorModelResults):
+        params = results.risk_premia
 
     data = np.array([params, bse, tvalues, pvalues]).T
     data = np.hstack([data, conf_int])
@@ -620,7 +644,7 @@ def summary_params(
 
     if not xname:
         if isinstance(results, arch_res_tuple):
-            data_index = (
+            data.index = (
                 results.model.parameter_names()
                 + results.model.volatility.parameter_names()
             )
@@ -628,7 +652,11 @@ def summary_params(
             try:
                 data.index = results.model.exog_names
             except (AttributeError, TypeError):
-                data.index = results.model.exog.vars
+                if isinstance(results, LinearFactorModelResults):
+                    data.index = results.risk_premia.index
+
+                else:
+                    data.index = results.model.exog.vars
     else:
         data.index = xname
 
@@ -662,7 +690,6 @@ def _col_params(result, float_format="%.4f", stars=True, show="t"):
     res.iloc[:, 3] = res.iloc[:, 3].apply(lambda x: float_format % x)  # pvalues to str
     res.iloc[:, 1] = "(" + res.iloc[:, 1] + ")"
     res.iloc[:, 2] = "(" + res.iloc[:, 2] + ")"
-    res.iloc[:, 3] = "(" + res.iloc[:, 3] + ")"
 
     # Stack Coefs and Std.Errors or pvalues
     if show == "t":
@@ -673,10 +700,11 @@ def _col_params(result, float_format="%.4f", stars=True, show="t"):
         res = res.iloc[:, [0, 3]]
     res = res.stack()
     res = pd.DataFrame(res)
-    try:
-        res.columns = [str(result.model.endog_names)]
-    except (AttributeError, TypeError):
-        res.columns = result.model.dependent.vars
+
+    # try:
+    #     res.columns = [str(result.model.endog_names)]
+    # except (AttributeError, TypeError):
+    #     res.columns = result.model.dependent.vars
 
     def _Intercept_2const(df):
         from pandas.core.indexes.multi import MultiIndex
@@ -736,7 +764,10 @@ def _col_info(result, more_info=None):  # WARNING - restore defaultinfo
     try:
         out = pd.DataFrame(more_info, index=[result.model.endog_names]).T
     except (AttributeError):
-        out = pd.DataFrame(more_info, index=result.model.dependent.vars).T
+        try:
+            out = pd.DataFrame(more_info, index=result.model.dependent.vars).T
+        except (AttributeError):
+            out = pd.DataFrame(more_info, index=["0"]).T
     return out
 
 
@@ -753,33 +784,30 @@ def _make_unique(list_of_names):
             c = 0
             for i in v:
                 c += 1
-                list_of_names[i] += "_%i" % c
+                list_of_names[i] = str(list_of_names[i]) + "_%i" % c
     return list_of_names
 
 
-def _make_unique_latex(list_of_names):
+def _make_unique_latex(list_of_names, keep=True):
     """
     Prepares a names list with the latex Thead method from the makecell package
     to get a multiline name with greek numbers
     """
     # correct previous unique making efforts
-    list_of_names = [x[:-2] if x[-2] == "_" else x for x in list_of_names]
-
-    # Commented block returns only roman numbers if all names are the same
-    # While single return always keeps names,even when they are equal
-    # if len(set(list_of_names)) == 1:
-    #     return [f"({roman.toRoman(x)})" for x in range(1, 1 + len(list_of_names))]
-    # # elif len(set(list_of_names)) == len(list_of_names):
-    # #     return list_of_names
-    # else:
-    #     return [
-    #         f"\\thead{{ ({roman.toRoman(x + 1)}) \\\\ {j}}}"
-    #         for x, j in enumerate(list_of_names)
-    #     ]
-    return [
-        f"\\thead{{ ({roman.toRoman(x + 1)}) \\\\ {j}}}"
-        for x, j in enumerate(list_of_names)
-    ]
+    try:
+        list_of_names = [x[:-2] if x[-2] == "_" else x for x in list_of_names]
+    except IndexError:
+        pass
+    if keep:
+        return [
+            f"\\thead{{ ({roman.toRoman(x + 1)}) \\\\ {j}}}"
+            for x, j in enumerate(list_of_names)
+        ]
+    else:
+        return [
+            f"\\thead{{ ({roman.toRoman(x + 1)}) }}"
+            for x, j in enumerate(list_of_names)
+        ]
 
 
 def summary_col(
@@ -848,7 +876,7 @@ def summary_col(
 
     # if regressor_order:
     if not regressor_order:
-        regressor_order = ["const"]
+        regressor_order = ["const", "Const", "Intercept", "intercept", "alpha"]
 
     varnames = summ.index.get_level_values(0).tolist()
     ordered = [x for x in regressor_order if x in varnames]
@@ -933,9 +961,6 @@ def summary_col(
         note = ["\t pvalues in parentheses."]
     if stars:
         note += ["\t * p<.1, ** p<.05, ***p<.01"]
-    # Here  I tried two ways to put extra text in index-location
-    # or columns-location,finally found the former is better.
-    #     note_df = pd.DataFrame(note,index=['note']+['']*(len(note)-1),columns=[summ.columns[0]])
     note_df = pd.DataFrame([], index=["note:"] + note, columns=summ.columns).fillna("")
     #     summ_all = pd.concat([summ,info,note_df],axis=0)
 
@@ -972,7 +997,7 @@ def summary_col(
 def _formatter(element, float_format="%.4f"):
     try:
         out = float_format % element
-    except:
+    except TypeError:
         out = str(element)
     return out.strip()
 
