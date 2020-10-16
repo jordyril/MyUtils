@@ -23,11 +23,13 @@ import numpy as np
 #     return None
 
 
-def intersection(*d):
+def intersection(*d, return_list=False):
     sets = iter(map(set, d))
     result = next(sets)
     for s in sets:
         result = result.intersection(s)
+    if return_list:
+        return list(result)
     return result
 
 
@@ -185,8 +187,8 @@ def clean_company_name(name):
     return cleaned
 
 
-def remove_duplicates_in_list(l):
-    return list(dict.fromkeys(l))
+def remove_duplicates_in_list(a_list):
+    return list(dict.fromkeys(a_list))
 
 
 def get_duplicate_columnnames(df):
@@ -225,36 +227,119 @@ def get_duplicate_columns(df):
     return duplicates, problem
 
 
-def drop_duplicate_columns(df, ignore_error=False, **kwargs):
+def drop_duplicate_columns(
+    df,
+    combine_all=False,
+    combine_few=False,
+    ignore_error=False,
+    return_problem_dic=False,
+    drop_ambiguous=False,
+    **kwargs,
+):
+
     df = df.sort_index(axis=1)
     duplicates, problems = get_duplicate_columns(df)
 
-    if len(problems) > 0:
-        if not ignore_error:
-            raise ValueError(f"Some columns have the same name, but different values")
-        else:
-            if not kwargs["keep"]:
-                raise ValueError(
-                    "If you ignore errors, you must explicitely stat the 'keep' keyword for the .duplicated() method"
-                )
-            keep = kwargs["keep"]
-            print("Some columns have the same name, but different values")
-            print(f"Simply retain '{keep}' here")
-            print("PROBLEMS:")
-            for i in problems:
-                print(i)
-            print()
-            return df.loc[:, ~df.columns.duplicated(keep=keep)]
-
     if len(duplicates) == 0:
         return df
+
+    # CHECK problems manually #warning
+    if len(problems) > 0:
+        problems_dic = {}
+
+        def _add_problem(key, value):
+            # global problems_dic
+            try:
+                problems_dic[key].append(value)
+            except KeyError:
+                problems_dic[key] = []
+                problems_dic[key].append(value)
+
+        for i in problems:
+            # if more than two duplicate columns code below will not work
+            if df[i].shape[1] > 2:
+                _add_problem("Too many duplicate columns", i)
+                continue
+
+            # check if one has nan's while other hasn't, simply fill in the nan's
+            # intersection of filled in values
+            index_list = [
+                df[i].iloc[:, j].dropna().index for j in range(df[i].shape[1])
+            ]
+            index = intersection(*index_list)
+
+            try:
+                assert len(get_duplicate_columns(df[i].loc[index])[1]) == 0
+            except AssertionError:
+                _add_problem("Different values", i)
+                continue
+
+            # FIRST case: there are nan's but they have no no overlapping indices to check if they are mostly similar...
+            if len(index) > 0:
+                if combine_all:
+                    combined_column = df[i].iloc[:, 0].combine_first(df[i].iloc[:, 1])
+                    df = df.drop(i, axis=1)
+                    df[i] = combined_column
+
+                    # problems.remove(i)
+                _add_problem("No common index", i)
+
+            # SECOND case: there are 'a few' nan's in one series but not in the other (or in both), but overlapping data to see if they match 'enough'
+            # on overlapping indices, they match perfectly
+            elif drop_duplicate_columns(df[i].loc[index]).shape[1] == 1:
+                if combine_few:
+                    combined_column = df[i].iloc[:, 0].combine_first(df[i].iloc[:, 1])
+                    df = df.drop(i, axis=1)
+                    df[i] = combined_column
+
+                    # problems.remove(i)
+                _add_problem("Common index checked", i)
+
+            else:
+                _add_problem("ToCheck", i)
+
+        # check if everything is fixed
+        duplicates, problems = get_duplicate_columns(df)
+
+        if len(problems) != 0:
+            if not ignore_error:
+                if return_problem_dic:
+                    return problems_dic
+                else:
+                    raise ValueError(
+                        "There are still problems with some columns and cannot be unambiguously dropped"
+                    )
+
+            elif ignore_error & (not drop_ambiguous):
+                try:
+                    keep = kwargs["keep"]
+                except KeyError:
+                    raise ValueError(
+                        "If you ignore errors, you must explicitely state the 'keep' keyword for the .duplicated() method"
+                    )
+
+                print("Some columns have the same name, but different values")
+                print(f"Simply retain '{keep}' here")
+                print("PROBLEMS:")
+                for i in problems:
+                    df[i] = df[i].loc[:, ~df[i].columns.duplicated(keep=keep)]
+                    print(i)
+                print()
+
+            elif ignore_error & drop_ambiguous:
+                to_drop = problems
+                for i in to_drop:
+                    df = df.drop(i, axis=1)
+
+        duplicates, problems = get_duplicate_columns(df)
+        assert len(problems) == 0
 
     # split main and duplicates
     duplicates_df = df[duplicates]
     # drop duplicate column (based on names, but checked above that values are equal too)
     duplicates_df = duplicates_df.loc[:, ~duplicates_df.columns.duplicated()]
 
-    # Drop ALL duplicates form main
+    # Drop ALL duplicates from main
     final = df.loc[:, ~df.columns.isin(duplicates)]
 
     # Add the single columns again (were before duplicated)
