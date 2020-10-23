@@ -1,4 +1,4 @@
-__author__ = 'jordy'
+__author__ = "Jordy Rillaerts"
 
 import MyUtils.printing
 import MyUtils.dataprocessing

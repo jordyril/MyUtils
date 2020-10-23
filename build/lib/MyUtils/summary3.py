@@ -10,9 +10,6 @@ import pandas as pd
 from collections import OrderedDict
 from functools import reduce
 from statsmodels.compat.python import (
-    iteritems,
-    iterkeys,
-    itervalues,
     lrange,
     lzip,
     # range,
@@ -100,9 +97,8 @@ class Summary(object):
         align : string
             Data alignment (l/c/r)
         """
-
-        keys = [_formatter(x, float_format) for x in iterkeys(d)]
-        vals = [_formatter(x, float_format) for x in itervalues(d)]
+        keys = [_formatter(x, float_format) for x in d.keys()]
+        vals = [_formatter(x, float_format) for x in d.values()]
         data = np.array(lzip(keys, vals))
 
         if data.shape[0] % ncols != 0:
@@ -523,7 +519,7 @@ def summary_model(results):
     info["Effects:"] = lambda x: ",".join(["%#8s" % i for i in x.included_effects])
 
     out = OrderedDict()
-    for key, func in iteritems(info):
+    for key, func in info.items():
         try:
             out[key] = func(results)
         # NOTE: some models don't have loglike defined (RLM), so that's NIE

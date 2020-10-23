@@ -49,8 +49,8 @@ EMAIL = "jordy_rillaerts13@hotmail.com"
 
 # versioning
 MAJOR = 0
-MINOR = 0
-MICRO = 1
+MINOR = 1
+MICRO = 0
 ISRELEASED = False
 VERSION = "%d.%d.%d" % (MAJOR, MINOR, MICRO)
 QUALIFIER = ""
@@ -65,18 +65,19 @@ CLASSIFIERS = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Operating System :: OS Independent",
-    "Intended Audience :: VAR Strategies",
+    "Intended Audience :: Jordy Rillaerts",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 2",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 2.6",
-    "Programming Language :: Python :: 2.7",
     "Programming Language :: Python :: 3.2",
     "Programming Language :: Python :: 3.3",
     "Programming Language :: Python :: 3.4",
     "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
     "Topic :: Support",
 ]
+
+DEPENDENCIES = ["pandas", "numpy", "roman", "arch", "linearmodels"]
 
 setup(
     name=DISTNAME,
@@ -86,12 +87,8 @@ setup(
     author_email=EMAIL,
     maintainer=AUTHOR,
     maintainer_email=EMAIL,
-    setup_requires=['roman'],
-    install_requires=['roman'],
+    # setup_requires=DEPENDENCIES,
+    install_requires=DEPENDENCIES,
     long_description=LONG_DESCRIPTION,
-    packages=[
-        "MyUtils",
-        "MyUtils.estimation",
-        "MyUtils.simulation",
-    ],
+    packages=["MyUtils", "MyUtils.estimation", "MyUtils.simulation"],
 )
