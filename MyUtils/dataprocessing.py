@@ -18,24 +18,24 @@ from MyUtils._utils import extensions_dic
 # =============================================================================
 
 
-def open_from_pickle(filename):
+def open_from_pickle(filename, folder="Data"):
     """
     Opening pickle file
     """
-    with open("Data/" + filename + ".pickle", "rb") as handle:
+    with open(f"{folder}/{filename}.pickle", "rb") as handle:
         b = pickle.load(handle)
     return b
 
 
-def save_to_pickle(filename, dic):
+def save_to_pickle(filename, dic, folder="Data"):
     """
     Saving an object to a pickle file
     """
     # create Data folder
-    if not os.path.exists("Data"):
-        os.makedirs("Data")
+    if not os.path.exists(folder):
+        os.makedirs(folder)
 
-    with open(filename + ".pickle", "wb") as handle:
+    with open(f"{folder}/{filename}.pickle", "wb") as handle:
         pickle.dump(dic, handle, protocol=pickle.HIGHEST_PROTOCOL)
     return None
 
