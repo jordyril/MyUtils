@@ -801,10 +801,7 @@ def _make_unique_latex(list_of_names, keep=True):
             for x, j in enumerate(list_of_names)
         ]
     else:
-        return [
-            f"\\thead{{ ({roman.toRoman(x + 1)}) }}"
-            for x, j in enumerate(list_of_names)
-        ]
+        return [f"({roman.toRoman(x + 1)})" for x, _ in enumerate(list_of_names)]
 
 
 def summary_col(
