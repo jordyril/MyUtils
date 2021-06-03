@@ -267,7 +267,7 @@ class Summary(object):
         self,
         note=True,
         dcolumn=False,
-        dcolumns_kwargs=None,
+        dcolumn_kwargs=None,
         spec_kwargs={},
         param_kwargs={},
         tabular_env="tabular",
@@ -297,8 +297,9 @@ class Summary(object):
             sep = param_kwargs.pop("sep", "")
             column_format = f"@{{{sep}}}"
             if dcolumn:
-                if not dcolumns_kwargs:
-                    column_format = column_format + f"l{nbr_cols * 'd{2.3}'}"
+
+                if not dcolumn_kwargs:
+                    column_format = column_format + f"l{nbr_cols * 'd{2.5}'}"
                 else:  # TODO
                     pass
             else:
