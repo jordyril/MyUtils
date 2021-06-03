@@ -480,7 +480,7 @@ def summary_model(results):
     info["Dependent Variable:"] = lambda x: x.model.dependent.vars[0]
 
     info["Date:"] = time_now
-    info["No. Observations:"] = lambda x: "%#6d" % x.nobs
+    info["No. Obs.:"] = lambda x: "%#6d" % x.nobs
     info["Df Model:"] = lambda x: "%#6d" % x.df_model
     info["Df Residuals:"] = lambda x: "%#6d" % x.df_resid
     info["Converged:"] = lambda x: x.mle_retvals["converged"]
@@ -726,13 +726,13 @@ def _col_params(result, float_format="%.4f", stars=True, show="t"):
     return _Intercept_2const(res)
 
 
-def _col_info(result, more_info=None):  # WARNING - restore defaultinfo
+def _col_info(result, more_info=None):  # WARNING - restore default info
     """Stack model info in a column
     """
     model_info = summary_model(result)
     default_info_ = OrderedDict()
     # default_info_["Model"] = lambda x: x.get("Model:")
-    default_info_["No. Observations"] = lambda x: x.get("No. Observations:")
+    default_info_["No. Obs."] = lambda x: x.get("No. Obs.:")
     default_info_["R-squared"] = lambda x: x.get("R-squared:")
     default_info_["Adj. R-squared"] = lambda x: x.get("Adj. R-squared:")
     default_info_["Pseudo R-squared"] = lambda x: x.get("Pseudo R-squared:")
