@@ -790,12 +790,13 @@ def _make_unique_latex(list_of_names, keep=True):
     Prepares a names list with the latex Thead method from the makecell package
     to get a multiline name with greek numbers
     """
-    # correct previous unique making efforts
-    try:
-        list_of_names = [x[:-2] if x[-2] == "_" else x for x in list_of_names]
-    except IndexError:
-        pass
+
     if keep:
+        # correct previous unique making efforts
+        try:
+            list_of_names = [x[:-2] if x[-2] == "_" else x for x in list_of_names]
+        except IndexError:
+            pass
         return [
             f"\\thead{{ ({roman.toRoman(x + 1)}) \\\\ {j}}}"
             for x, j in enumerate(list_of_names)
