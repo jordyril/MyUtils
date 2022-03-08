@@ -5,6 +5,7 @@ MyUtils/_utils.py
 MyUtils/dataprocessing.py
 MyUtils/general.py
 MyUtils/latex.py
+MyUtils/logging.py
 MyUtils/printing.py
 MyUtils/summary3.py
 MyUtils/vector.py

@@ -40,17 +40,17 @@ from setuptools import setup, find_packages
 DISTNAME = "MyUtils"
 
 # descriptions
-DESCRIPTION = "'MyUtils' package version"
-LONG_DESCRIPTION = "'MyUtils' package and extensions\n"
+DESCRIPTION = "'MyUtils'"
+LONG_DESCRIPTION = "'MyUtils'\n"
 
 # developer(s)
 AUTHOR = "Jordy Rillaerts"
 EMAIL = "jordy_rillaerts13@hotmail.com"
 
 # versioning
-MAJOR = 0
-MINOR = 1
-MICRO = 0
+MAJOR = 1
+MINOR = 0
+MICRO = 1
 ISRELEASED = False
 VERSION = "%d.%d.%d" % (MAJOR, MINOR, MICRO)
 QUALIFIER = ""
@@ -77,7 +77,7 @@ CLASSIFIERS = [
     "Topic :: Support",
 ]
 
-DEPENDENCIES = ["pandas", "numpy", "roman", "arch", "linearmodels"]
+DEPENDENCIES = ["pandas", "numpy", "roman", "arch", "linearmodels", "logging"]
 
 setup(
     name=DISTNAME,
