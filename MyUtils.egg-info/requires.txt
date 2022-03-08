@@ -3,3 +3,4 @@ numpy
 roman
 arch
 linearmodels
+logging

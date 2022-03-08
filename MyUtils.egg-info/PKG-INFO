@@ -1,7 +1,7 @@
 Metadata-Version: 2.1
 Name: MyUtils
-Version: 0.1.0
-Summary: 'MyUtils' package version
+Version: 1.0.1
+Summary: 'MyUtils'
 Home-page: UNKNOWN
 Author: Jordy Rillaerts
 Author-email: jordy_rillaerts13@hotmail.com
@@ -10,6 +10,6 @@ Maintainer-email: jordy_rillaerts13@hotmail.com
 License: UNKNOWN
 Platform: UNKNOWN
 
-'MyUtils' package and extensions
+'MyUtils'
 
 

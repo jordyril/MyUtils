@@ -235,7 +235,7 @@ def drop_duplicate_columns(
                 df[i].iloc[:, j].dropna().index for j in range(df[i].shape[1])
             ]
             index = intersection(*index_list)
-
+            index = list(index)
             try:
                 assert len(get_duplicate_columns(df[i].loc[index])[1]) == 0
             except AssertionError:
