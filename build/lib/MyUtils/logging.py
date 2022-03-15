@@ -5,26 +5,37 @@ import logging
 from .general import create_subfolder
 import os
 from datetime import datetime
-
+import mmap
 
 # =============================================================================
 # CREATE BASECLASS +FUNCTIONS
 # =============================================================================
+
+
 class LogReader(object):
     def __init__(self):
         pass
 
     @property
     def logs(self):
-        try:
-            with open(self.logfile) as f:
-                _logs = f.read()
-        except FileNotFoundError:
-            return ""
+        with open(self.logfile) as f:
+            _logs = f.read()
         return _logs
 
     def check(self, text):
-        return False if text not in self.logs else True
+        with open(self.logfile, "rb", 0) as file, mmap.mmap(
+            file.fileno(), 0, access=mmap.ACCESS_READ
+        ) as s:
+            if s.find(text.encode()) != -1:
+                return True
+            return False
+
+    # def check2(self, text):
+    #     return False if text not in self.logs else True
+
+    # def check3(self, text):
+    #     with open(self.logfile) as f:
+    #         return text in f.read()
 
 
 def create_logfolder():
@@ -129,12 +140,17 @@ class MyLogger(LogReader):
 
     def _check_logfile(self, filename, log_folder, extension, clean_file):
         file = f"{filename}.{extension}"
+
         if log_folder:
             create_logfolder()
             file = "Logs/" + file
+
         self.logfile = file
+
         if (not os.path.exists(self.logfile)) | (clean_file):
             file = open(self.logfile, "w+")
+            title = f"INITIALIZATION:{self.logfile}"
+            file.write(f"{len(title) * '#'}\n{title}\n{len(title) * '#'}\n")
             file.close()
 
     def _now(self):

@@ -1,5 +1,6 @@
 from MyUtils.logging import MyLogger
 import logging
+import numpy as np
 import os
 import time
 
@@ -23,10 +24,32 @@ os.chdir(f"{os.getcwd()}\\MyUtils/Testing")
 # =============================================================================
 # SIMPLE TEXT LOGGING
 # =============================================================================
-logger = MyLogger("test", log_folder=True, mode="a")
+logger = MyLogger("test/test2", log_folder=True, clean_file=True)
 
-logger.write("Test")
+for i in range(6):
+    logger.write(f"TEST{i}")
 
-logger.check("INFO")
+logger.check("TEST1999")
+logger.check2("TEST2000")
+# logger.check2("TEST2000")
 
-# logger.check("Test2")
+import timeit
+
+# timeit.timeit(lambda: logger.check2("Test2"), number=100000)
+a = timeit.repeat(lambda: logger.check("Test2"), number=10000, repeat=10)
+b = timeit.repeat(lambda: logger.check2("Test2"), number=10000, repeat=10)
+c = timeit.repeat(lambda: logger.check3("Test2"), number=10000, repeat=10)
+
+a = np.array(a)
+b = np.array(b)
+c = np.array(c)
+
+
+((b - a) / a).mean()
+((c - a) / a).mean()
+((c - b) / b).mean()
+
+
+c.std()
+b.std()
+a.std()
