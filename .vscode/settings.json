@@ -1,3 +1,6 @@
 {
-    "activestate.promptRuntimeCreation": false
+    "activestate.promptRuntimeCreation": false,
+    "cSpell.ignoreWords": [
+        "chdir"
+    ]
 }

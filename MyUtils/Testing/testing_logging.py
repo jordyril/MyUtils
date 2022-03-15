@@ -1,8 +1,10 @@
 from MyUtils.logging import MyLogger
-import logging
+
+# import logging
 import numpy as np
 import os
-import time
+
+# import time
 
 # TODO- create better structure  + use unittest
 
@@ -19,7 +21,7 @@ os.chdir(f"{os.getcwd()}\\MyUtils/Testing")
 #     date_format="%d/%m/%Y %H:%M:%S",
 #     mode="w",
 # )
-# logger.logger.inofo("test")
+# logger.logger.info("test")
 
 # =============================================================================
 # SIMPLE TEXT LOGGING
