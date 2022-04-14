@@ -26,13 +26,24 @@ os.chdir(f"{os.getcwd()}\\MyUtils/Testing")
 # =============================================================================
 # SIMPLE TEXT LOGGING
 # =============================================================================
-logger = MyLogger("test/test2", log_folder=True, clean_file=True)
+logger = MyLogger("test", log_folder=True, clean_file=True)
 
 for i in range(6):
     logger.write(f"TEST{i}")
 
+msg = "Run successfully"
+
+msg2 = "Not run at all"
+logger.write(msg)
+
+
+logger.delete(msg)
+logger.replace(msg, msg2)
+logger.lines
+logger.logs
+
 logger.check("TEST1999")
-logger.check2("TEST2000")
+# logger.check2("TEST2000")
 # logger.check2("TEST2000")
 
 import timeit

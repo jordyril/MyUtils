@@ -18,9 +18,15 @@ class LogReader(object):
 
     @property
     def logs(self):
-        with open(self.logfile) as f:
+        with open(self.logfile, "r") as f:
             _logs = f.read()
         return _logs
+
+    @property
+    def lines(self):
+        with open(self.logfile, "r") as f:
+            _lines = f.readlines()
+        return _lines
 
     def check(self, text):
         with open(self.logfile, "rb", 0) as file, mmap.mmap(
@@ -54,15 +60,15 @@ class LoggingExtended(LogReader):
         log_folder=False,
         level=logging.INFO,
         formatting="%(asctime)s:%(levelname)s:%(name)s:%(message)s",
-        date_format="%d/%m/%Y %H:%M:%S",
+        datetime_format="%d/%m/%Y %H:%M:%S",
         mode="a",
     ):
         self.logger = self._create_logger(
-            filename, log_folder, level, formatting, date_format, mode
+            filename, log_folder, level, formatting, datetime_format, mode
         )
 
     def _create_logger(
-        self, name, log_folder, level, formatting, date_format, mode,
+        self, name, log_folder, level, formatting, datetime_format, mode,
     ):
         logging.shutdown()
         # logging
@@ -76,7 +82,9 @@ class LoggingExtended(LogReader):
         logger.setLevel(level)
 
         file_handler = logging.FileHandler(self.logfile, mode=mode)
-        formatter = logging.Formatter(formatting, datefmt=date_format)  # logging format
+        formatter = logging.Formatter(
+            formatting, datefmt=datetime_format
+        )  # logging format
 
         file_handler.setFormatter(formatter)
 
@@ -88,34 +96,6 @@ class LoggingExtended(LogReader):
         return self.logger.__repr__()
 
 
-# def create_logging(
-#     name,
-#     log_folder=False,
-#     level=logging.INFO,
-#     formatting="%(asctime)s:%(levelname)s:%(name)s:%(message)s",
-#     date_format="%d/%m/%Y %H:%M:%S",
-#     mode="a",
-# ):
-#     # logging
-#     log_file = f"{name}.log"  # file name
-
-#     if log_folder:
-#         create_logfolder()
-#         log_file = "Logs/" + log_file
-
-#     logger = logging.getLogger(log_file)  # create logger
-#     logger.setLevel(level)
-
-#     file_handler = logging.FileHandler(log_file, mode=mode)
-#     formatter = logging.Formatter(formatting, datefmt=date_format)  # logging format
-
-#     file_handler.setFormatter(formatter)
-
-#     logger.addHandler(file_handler)
-
-#     return logger
-
-
 # =============================================================================
 # SIMPLE TEXT LOGGING
 # =============================================================================
@@ -124,15 +104,32 @@ class MyLogger(LogReader):
         self,
         filename,
         log_folder=False,
-        date_format="%d/%m/%Y %H:%M:%S",
+        datetime_format=None,
+        datetime_freq="s",
         clean_file=False,
         extension="log",
         duplicates=False,
     ):
         self._check_logfile(filename, log_folder, extension, clean_file)
-        self._date_format = date_format
+        self._datetime_freq_formatting(datetime_freq, datetime_format)
         self._duplicate = duplicates
         self._prefix = "INFO"
+
+    def delete(self, text):
+        lines = self.lines
+        with open(self.logfile, "w+") as file:
+            for line in lines:
+                if text in line:
+                    continue
+                file.write(line)
+
+    def replace(self, to_drop, replacement):
+        lines = self.lines
+        with open(self.logfile, "w+") as file:
+            for line in lines:
+                if to_drop in line:
+                    line.replace(to_drop, replacement)
+                file.write(line)
 
     def write(self, text, mode="a"):
         with open(self.logfile, mode) as f:
@@ -147,18 +144,40 @@ class MyLogger(LogReader):
 
         self.logfile = file
 
-        if (not os.path.exists(self.logfile)) | (clean_file):
-            os.makedirs(self.logfile)
+        if (self.__exists) & (clean_file):
+            os.remove(self.logfile)
+
+        if (not self.__exists) | (clean_file):
+            # os.makedirs(self.logfile)
             file = open(self.logfile, "w+")
             title = f"INITIALIZATION:{self.logfile}"
             file.write(f"{len(title) * '#'}\n{title}\n{len(title) * '#'}\n")
             file.close()
 
+    def _datetime_freq_formatting(self, datetime_freq, datetime_format):
+        if (datetime_format is not None) & (datetime_freq is not None):
+            raise ValueError("Either specify date frequency or date format, not both")
+
+        if datetime_freq.lower() == "s":
+            self._datetime_format = "%d/%m/%Y %H:%M:%S"
+        elif datetime_freq.lower() == "d":
+            self._datetime_format = "%d/%m/%Y"
+        else:
+            if datetime_format is None:
+                raise NotImplementedError(
+                    "This date frequency is not implemented yet, specify the datetime_format parameter instead"
+                )
+            self._datetime_format = datetime_format
+
     def _now(self):
-        return datetime.now().strftime(self._date_format)
+        return datetime.now().strftime(self._datetime_format)
 
     def __name__(self):
         return f"{self.logfile}"
 
     def __repr__(self):
         return self.logs
+
+    @property
+    def __exists(self):
+        return os.path.exists(self.logfile)
