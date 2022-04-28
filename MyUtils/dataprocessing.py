@@ -122,22 +122,24 @@ class DataProcessor(object):
         attr = self._read
         return getattr(pd, attr)(self._file_path(filename, self._ext), *args, **kwargs)
 
-    def save_to_pickle(self, filename, dic, destination=False):
+    def save_to_pickle(self, filename, dic, destination=False, zip=False):
         """
         Saving an object to a pickle file
         """
-        file = self._file_path(filename, "pickle", destination)
+        extension = "pickle" if not zip else "pickle.zip"
+        file = self._file_path(filename, extension, destination)
 
         with open(file, "wb") as handle:
             pickle.dump(dic, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
         return None
 
-    def open_from_pickle(self, filename, destination=False):
+    def open_from_pickle(self, filename, destination=False, zip=False):
         """
         Opening pickle file
         """
-        file = self._file_path(filename, "pickle", destination)
+        extension = "pickle" if not zip else "pickle.zip"
+        file = self._file_path(filename, extension, destination)
         with open(file, "rb") as handle:
             data = pickle.load(handle)
         return data
