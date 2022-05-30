@@ -54,7 +54,7 @@ URL = "https://github.com/jordyril/MyUtils"
 # versioning
 MAJOR = 1
 MINOR = 0
-MICRO = 1
+MICRO = 2
 ISRELEASED = False
 VERSION = "%d.%d.%d" % (MAJOR, MINOR, MICRO)
 QUALIFIER = ""

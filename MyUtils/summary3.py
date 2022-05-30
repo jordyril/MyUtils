@@ -58,7 +58,8 @@ class Summary(object):
             "float_format": float_format,
             "align": align,
         }
-        self.tables.append(df)
+        self.tables = pd.concat([self.tables, df])
+        # self.tables.append(df)
         self.settings.append(settings)
 
     def add_array(self, array, align="r", float_format="%.4f"):
@@ -163,8 +164,7 @@ class Summary(object):
         self.add_title(title=title, results=results)
 
     def as_text(self):
-        """Generate ASCII Summary Table
-        """
+        """Generate ASCII Summary Table"""
 
         tables = self.tables
         settings = self.settings
@@ -200,8 +200,7 @@ class Summary(object):
         return out
 
     def as_html(self):
-        """Generate HTML Summary Table
-        """
+        """Generate HTML Summary Table"""
 
         tables = self.tables
         settings = self.settings
@@ -267,7 +266,7 @@ class Summary(object):
             index=info_df.columns, columns=[row_name], data=values
         ).T
         info_df = pd.concat([info_df, extra_info_df])
-        self.tables[20] = info_df
+        self.tables[2] = info_df
 
     def add_se_note(self, std_error_message):
         se_note_df = pd.DataFrame(
@@ -474,8 +473,7 @@ _model_types = {
 
 
 def summary_model(results):
-    """Create a dict with information about the model
-    """
+    """Create a dict with information about the model"""
 
     def time_now(*args, **kwds):
         now = datetime.datetime.now()
@@ -615,8 +613,15 @@ def summary_params(
         conf_int = np.asarray(results.risk_premia)[:, None] + np.asarray(
             results.risk_premia_se
         )[:, None] * stats.norm.ppf([[alpha / 2, 1 - alpha / 2]])
-        conf_int = pd.DataFrame(conf_int, index=bse.index, columns=["lower", "upper"],)
-        pvalues = pd.Series(2 - 2 * stats.norm.cdf(np.abs(tvalues)), index=bse.index,)
+        conf_int = pd.DataFrame(
+            conf_int,
+            index=bse.index,
+            columns=["lower", "upper"],
+        )
+        pvalues = pd.Series(
+            2 - 2 * stats.norm.cdf(np.abs(tvalues)),
+            index=bse.index,
+        )
 
     else:
         bse = results.bse
@@ -674,8 +679,7 @@ def summary_params(
 
 
 def _col_params(result, float_format="%.4f", stars=True, show="t"):
-    """Stack coefficients and standard errors in single column
-    """
+    """Stack coefficients and standard errors in single column"""
     # I add the parameter 'show' equals 't' to display tvalues by default,
     # 'p' for pvalues and 'se' for std.err are alternative.
 
@@ -740,8 +744,7 @@ def _col_params(result, float_format="%.4f", stars=True, show="t"):
 
 
 def _col_info(result, more_info=None):  # WARNING - restore default info
-    """Stack model info in a column
-    """
+    """Stack model info in a column"""
     model_info = summary_model(result)
     default_info_ = OrderedDict()
     # default_info_["Model"] = lambda x: x.get("Model:")
