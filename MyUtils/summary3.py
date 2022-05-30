@@ -58,8 +58,7 @@ class Summary(object):
             "float_format": float_format,
             "align": align,
         }
-        self.tables = pd.concat([self.tables, df])
-        # self.tables.append(df)
+        self.tables.append(df)
         self.settings.append(settings)
 
     def add_array(self, array, align="r", float_format="%.4f"):
