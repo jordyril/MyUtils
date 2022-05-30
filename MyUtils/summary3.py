@@ -334,7 +334,7 @@ class Summary(object):
                 if exp.search(x)
                 else x
             )
-        param_latex = param_table.style.to_latex(**param_kwargs)
+        param_latex = param_table.to_latex(**param_kwargs)
         # Spec table
         # First 'unbracket' 'effects
         spec_table = self.tables[2]
@@ -351,7 +351,7 @@ class Summary(object):
         if dcolumn:
             spec_table = spec_table.applymap(lambda x: f"\mc{{{x}}}")
 
-        specs_latex = spec_table.style.to_latex(**spec_kwargs)
+        specs_latex = spec_table.to_latex(**spec_kwargs)
 
         # both are within tabular environment, split up so the can be joined to one
         param_latex = param_latex.split("\\bottomrule\n")[0]
