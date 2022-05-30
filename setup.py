@@ -12,11 +12,11 @@ Created on Tue Jul 31 12:29:16 2018
    python MyUtils.py sdist
 
    which will create an archive file in the 'dist' subdirectory.
-   The archive file will be  called 'MyUtils-1.0.zip' and will
-   unpack into a directory 'MyUtils-1.0'.
+   The archive file will be  called 'MyUtils-X.X.zip' and will
+   unpack into a directory 'MyUtils-X.X'.
 
    An end-user wishing to install the MyUtils package can simply
-   unpack 'MyUtils-1.0.zip' and from the 'MyUtils-1.0' directory and
+   unpack 'MyUtils-X.X.zip' and from the 'MyUtils-X.X' directory and
    run
 
    python setup.py install
@@ -29,23 +29,27 @@ Created on Tue Jul 31 12:29:16 2018
 
    python setup.py bdist_wininst
 
-   which will create an executable installer, 'MyUtils-1.0.win32.exe',
+   which will create an executable installer, 'MyUtils-X.X.win32.exe',
    in the current directory.
 
 """
 
-from setuptools import setup, find_packages
+import setuptools
+
 
 # package naming
 DISTNAME = "MyUtils"
 
 # descriptions
 DESCRIPTION = "'MyUtils'"
-LONG_DESCRIPTION = "'MyUtils'\n"
+with open("README.md", "r", encoding="utf-8") as fh:
+    LONG_DESCRIPTION = fh.read()
 
 # developer(s)
 AUTHOR = "Jordy Rillaerts"
 EMAIL = "jordy_rillaerts13@hotmail.com"
+
+URL = "https://github.com/jordyril/MyUtils"
 
 # versioning
 MAJOR = 1
@@ -61,34 +65,24 @@ write_version = True
 # if not ISRELEASED:
 # FULLVERSION += '.dev'
 
-CLASSIFIERS = [
-    "Development Status :: 4 - Beta",
-    "Environment :: Console",
-    "Operating System :: OS Independent",
-    "Intended Audience :: Jordy Rillaerts",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.2",
-    "Programming Language :: Python :: 3.3",
-    "Programming Language :: Python :: 3.4",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Topic :: Support",
-]
+# DEPENDENCIES = ["pandas", "numpy", "roman", "linearmodels", "arch"]
 
-DEPENDENCIES = ["pandas", "numpy", "roman", "arch", "linearmodels", "logging"]
+DEPENDENCIES = []
+with open("requirements.txt", "r", encoding="utf-8") as requirements:
+    for line in requirements:
+        DEPENDENCIES.append(line.strip())
 
-setup(
+setuptools.setup(
     name=DISTNAME,
     version=FULLVERSION,
-    description=DESCRIPTION,
     author=AUTHOR,
     author_email=EMAIL,
     maintainer=AUTHOR,
     maintainer_email=EMAIL,
-    # setup_requires=DEPENDENCIES,
     install_requires=DEPENDENCIES,
+    description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
+    url=URL,
+    long_description_content_type="test/markdown",
     packages=["MyUtils", "MyUtils.estimation", "MyUtils.simulation"],
 )
