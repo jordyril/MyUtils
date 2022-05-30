@@ -12,14 +12,8 @@ from functools import reduce
 from statsmodels.compat.python import (
     lrange,
     lzip,
-    # range,
-    # reduce,
-    # string_types,
-    # zip,
 )
 
-# from .table import SimpleTable
-# from .tableformatting import fmt_latex, fmt_txt
 from statsmodels.iolib.table import SimpleTable
 from statsmodels.iolib.tableformatting import fmt_latex, fmt_txt
 from collections import defaultdict
@@ -218,29 +212,24 @@ class Summary(object):
 
         return tab
 
-    def as_latex(self):
-        """Generate LaTeX Summary Table
-        """
-        tables = self.tables
-        settings = self.settings
-        title = self.title
-        if title is not None:
-            title = "\\caption{" + title + "} \\\\"
-        else:
-            title = "\\caption{}"
+    # def as_latex(self):
+    #     """Generate LaTeX Summary Table
+    #     """
+    #     tables = self.tables
+    #     settings = self.settings
+    #     title = self.title
+    #     if title is not None:
+    #         title = "\\caption{" + title + "} \\\\"
+    #     else:
+    #         title = "\\caption{}"
 
-        simple_tables = _simple_tables(tables, settings)
-        tab = [x.as_latex_tabular() for x in simple_tables]
-        tab = "\n\\hline\n".join(tab)
+    #     simple_tables = _simple_tables(tables, settings)
+    #     tab = [x.as_latex_tabular() for x in simple_tables]
+    #     tab = "\n\\hline\n".join(tab)
 
-        out = "\\begin{table}", title, tab, "\\end{table}"
-        out = "\n".join(out)
-        return out
-
-    # I added the output method based on pd.DataFrame().to_excel/csv().
-    # I merged  the results when they are output, mainly in order to make
-    #  the output be distinguishable and more beautiful when printing
-    #  Maybe there are other better ways.
+    #     out = "\\begin{table}", title, tab, "\\end{table}"
+    #     out = "\n".join(out)
+    #     return out
 
     def to_excel(self, path=None):
         tables = self.tables
@@ -262,6 +251,31 @@ class Summary(object):
             path = cwd + "\\summary_results.csv"
         summ_df = pd.concat(tables, axis=0)
         return summ_df.to_csv(path)
+
+    def delete_info_row(self, row_name):
+        info_df = self.tables[2]
+        info_df = info_df.drop(row_name)
+        self.tables[2] = info_df
+
+    def add_info_row(self, row_name, values):
+        info_df = self.tables[2]
+        assert (
+            len(values) == info_df.shape[1]
+        ), f"Lengths do not match: length value ({len(values)}) != expected length ({info_df.shape[1]})"
+
+        extra_info_df = pd.DataFrame(
+            index=info_df.columns, columns=[row_name], data=values
+        ).T
+        info_df = pd.concat([info_df, extra_info_df])
+        self.tables[20] = info_df
+
+    def add_se_note(self, std_error_message):
+        se_note_df = pd.DataFrame(
+            self.tables[-1].shape[1] * [" "],
+            index=self.tables[-1].columns,
+            columns=[f"\t {std_error_message}"],
+        ).T
+        self.tables[-1] = pd.concat([self.tables[-1], se_note_df])
 
     def to_latex_string(
         self,
@@ -322,7 +336,7 @@ class Summary(object):
                 if exp.search(x)
                 else x
             )
-        param_latex = param_table.to_latex(**param_kwargs)
+        param_latex = param_table.style.to_latex(**param_kwargs)
         # Spec table
         # First 'unbracket' 'effects
         spec_table = self.tables[2]
@@ -339,8 +353,7 @@ class Summary(object):
         if dcolumn:
             spec_table = spec_table.applymap(lambda x: f"\mc{{{x}}}")
 
-        # specs_latex = spec_table.to_latex(escape=False, bold_rows=True)
-        specs_latex = spec_table.to_latex(**spec_kwargs)
+        specs_latex = spec_table.style.to_latex(**spec_kwargs)
 
         # both are within tabular environment, split up so the can be joined to one
         param_latex = param_latex.split("\\bottomrule\n")[0]
@@ -817,6 +830,7 @@ def summary_col(
     show="t",
     title=None,
     delta=False,
+    keep_only=None,
 ):
     """
     Summarize multiple results instances side-by-side (coefs and SEs)
@@ -843,10 +857,6 @@ def summary_col(
     regressor_order : list of strings, optional
         list of names of the regressors in the desired order. All regressors
         not specified will be appended to the end of the list.
-    drop_omitted : bool, optional
-        Includes regressors that are not specified in regressor_order. If False,
-        regressors not specified will be appended to end of the list. If True,
-        only regressors in regressors_list will be included.
     """
 
     if not isinstance(results, list):
@@ -898,6 +908,10 @@ def summary_col(
 
     # Manage interaction
     summ.index = [x.replace(" x ", " \times ") for x in summ.index]
+
+    #
+    if keep_only:
+        summ = summ.loc[keep_only].copy()
 
     # Add delta
     if delta:
