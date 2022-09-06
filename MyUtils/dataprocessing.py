@@ -110,17 +110,22 @@ class DataProcessor(object):
 
         raise AttributeError(f"'{self.__class__}' object has no attribute '{attr}'")
 
-    def to(self, df, filename, extension=None, *args, **kwargs):
+    def to(self, df, filename, extension=None, zip=False, *args, **kwargs):
         if extension:
             ext = extension
         else:
             ext = self._ext
+        if zip:
+            ext += ".zip"
         attr = self._to
         getattr(df, attr)(self._file_path(filename, ext), *args, **kwargs)
 
-    def read(self, filename, *args, **kwargs):
+    def read(self, filename, zip=False, *args, **kwargs):
+        ext = self._ext
+        if zip:
+            ext += ".zip"
         attr = self._read
-        return getattr(pd, attr)(self._file_path(filename, self._ext), *args, **kwargs)
+        return getattr(pd, attr)(self._file_path(filename, ext), *args, **kwargs)
 
     def save_to_pickle(self, filename, dic, destination=False, zip=False):
         """
