@@ -9,20 +9,17 @@ import numpy as np
 # =============================================================================
 # support functions
 # =============================================================================
+def difference(*d, return_list=True):
+    sets = iter(map(set, d))
+    result = next(sets)
+    for s in sets:
+        result = result.difference(s)
+    if return_list:
+        return list(result)
+    return result
 
 
-# def debug(x, index=None):
-#     """
-#     Assisting function, showing the name of a variable and its value(s)
-#     """
-#     if index is not None:
-#         print(x + '[' + str(index) + ']:', globals()[x][index])
-#     else:
-#         print(x + ':', globals()[x])
-#     return None
-
-
-def intersection(*d, return_list=False):
+def intersection(*d, return_list=True):
     sets = iter(map(set, d))
     result = next(sets)
     for s in sets:
@@ -42,7 +39,6 @@ def create_outputfolder():
 
 
 def create_my_folders():
-    # create_logfolder()
     create_outputfolder()
 
 
@@ -334,3 +330,4 @@ def plot_rolling_regression_results(betas, stdv, dates, multiplier=2):
 
     ax.plot(dates[-nbr_estimates:], np.zeros(nbr_estimates), ls="-", c="black")
     plt.xlabel("Time")
+    return fig, ax
