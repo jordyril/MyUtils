@@ -9,6 +9,8 @@ import numpy as np
 # =============================================================================
 # support functions
 # =============================================================================
+
+
 def difference(*d, return_list=True):
     sets = iter(map(set, d))
     result = next(sets)
